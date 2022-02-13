@@ -14,8 +14,11 @@ class Game:
         self.dealer = User()
         self.players = []
 
+print('0')
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', 12000))
+print('1')
+sock.connect(('10.120.70.106', 12000))
+print('connected')
 
 #sock.setblocking(0)
 
