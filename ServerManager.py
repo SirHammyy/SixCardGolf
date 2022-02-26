@@ -17,8 +17,10 @@ class Game:
     def __init__(self, dealer):
         self.dealer = dealer
         self.players = []
+        self.id = 0
 
 activePlayers = []
+availablePlayers = []
 activeGames = []
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -56,6 +58,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                             s.send(b'SUCCESS')
                             tempUser = User(username, ip, port)
                             activePlayers.append(tempUser)
+                            availablePlayers.append(tempUser)
 
                     elif params[0] == 'query':
                         if params[1] == 'players\n':
@@ -78,7 +81,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                         success = False
 
                         foundDealer = False
-                        for i in activePlayers:
+                        for i in availablePlayers:
                             if i.username == dealerInput:
                                 foundDealer = True
                                 gameDealer = i
@@ -86,7 +89,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                         if not foundDealer:
                             success = False
 
-                        elif len(activePlayers) - 1 < int(params[3]):
+                        elif len(availablePlayers) - 1 < int(params[3]):
                             success = False
                         
                         elif playerCount < 2 or playerCount > 4:
@@ -96,9 +99,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                             success = True
 
                         if success:
-                            newGame = Game(gameDealer)
-                            activeGames.append(newGame)
                             s.send(b'SUCCESS')
+                            newGame = Game(gameDealer)
+                            s.send(pickle.dumps(gameDealer))
+                            s.recv(1024)
+                            availablePlayers.remove(gameDealer)
+                            for i in range(int(params[3])):
+                                s.send(pickle.dumps(availablePlayers.pop()))
+                                s.recv(1024)
+
+                            activeGames.append(newGame)
                         else:
                             s.send(b'FAILURE')
 
@@ -116,10 +126,5 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
 
                         if not foundPlayer:
                             s.send(b'FAILURE')
-                            
-
-                    else:
-                        print("Player left")
-                        read_list.remove(s)
 
     
