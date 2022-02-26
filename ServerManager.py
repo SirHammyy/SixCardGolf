@@ -27,6 +27,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
     sock.bind((HOST, PORT))
     sock.listen()
     read_list = [sock]
+    print('Listening for players on port ', PORT)
     while True:
         readable, writable, errored = select.select(read_list, [], [])
         for s in readable:
