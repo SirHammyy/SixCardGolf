@@ -1,10 +1,12 @@
 from asyncore import read
+import readline
 import socket
 import pickle
 import select
 from sqlite3 import Cursor
 import sys
 import random
+from xml.sax import default_parser_list
 
 class User:
     def __init__(self, username, ip, port):
@@ -223,9 +225,57 @@ def StartGameLoop():
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
                             SendHand(currentPlayer)
+                    
+                    elif moveParams[0] == "steal":
+                        stolenUser = User('temp','','')
+                        stolenCardInput = moveParams[2].replace('\n', '')
+                        if len(stolenCardInput) == 2:
+                            stolenCardInput = ' ' + stolenCardInput
+                        #Stealing from other player
+                        if moveParams[1] != currentGame.dealer.username:
+                            for i in currentGame.players:
+                                if i.username.lower() == moveParams[1].lower():
+                                    stolenUser = i
+                            stolenCard = Card('')
+                            replacedCard = currentPlayer.hand[currentCard]
+                            for i in range(len(stolenUser.hand)):
+                                if stolenUser.hand[i].value.lower() == stolenCardInput.lower():
+                                    stolenCard = stolenUser.hand[i]
+                                    stolenUser.hand[i] = replacedCard
+                                    stolenUser.hand[i].revealed = True
+                            
+                            currentPlayer.hand[currentCard] = stolenCard
+                            currentPlayer.hand[currentCard].revealed = True
+                            SendHand(stolenUser)
+                            SendHand(currentPlayer)
+                            
+                        
+                        #Stealing from dealer
+                        else:
+                            stolenUser = User('temp','','')
+                            for i in currentGame.players:
+                                if i.username.lower() == currentGame.dealer.username.lower():
+                                    stolenUser = i
+                            print('STEALING')
+                            
+                            stolenCard = Card('')
+                            replacedCard = currentPlayer.hand[currentCard]
+                            for i in range(len(stolenUser.hand)):
+                                if stolenUser.hand[i].value.lower() == stolenCardInput.lower():
+                                    stolenCard = stolenUser.hand[i]
+                                    stolenUser.hand[i] = replacedCard
+                                    stolenUser.hand[i].revealed = True
+                            currentPlayer.hand[currentCard] = stolenCard
+                            currentPlayer.hand[currentCard].revealed = True
+                            SendHand(currentPlayer)
+                            print('New Hand:')
+                            PrintHand(stolenUser)
+
+                        
+
 
                 #Basically do what you do for other players, but for yourself
-                elif currentPlayer == currentGame.dealer:
+                elif currentPlayer.username == currentGame.dealer.username:
                     PrintCards(currentPlayer)
                     print('WAITING FOR MOVE')
                     move = sys.stdin.readline()
@@ -250,6 +300,29 @@ def StartGameLoop():
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
                             PrintHand(currentPlayer)
+
+                    elif moveParams[0] == "steal":
+                        stolenUser = User('temp','','')
+                        stolenCardInput = moveParams[2].replace('\n', '')
+                        if len(stolenCardInput) == 2:
+                            stolenCardInput = ' ' + stolenCardInput
+                        for i in currentGame.players:
+                            if i.username.lower() == moveParams[1].lower():
+                                stolenUser = i
+                        peerSock.sendto(b'STEALING', (stolenUser.ip, int(stolenUser.port)))
+                        stolenCard = Card('')
+                        replacedCard = currentPlayer.hand[currentCard]
+                        for i in range(len(stolenUser.hand)):
+                            if stolenUser.hand[i].value.lower() == stolenCardInput.lower():
+                                stolenCard = stolenUser.hand[i]
+                                stolenUser.hand[i] = replacedCard
+                                stolenUser.hand[i].revealed = True
+                        currentPlayer.hand[currentCard] = stolenCard
+                        currentPlayer.hand[currentCard].revealed = True
+                        SendHand(stolenUser)
+                        print('New Hand:')
+                        PrintHand(currentPlayer)
+                        print('')
 
             currentCard = currentCard + 1
 
@@ -323,6 +396,24 @@ while True:
                         moveData, moveAddr = s.recvfrom(1024)
                         print("New hand:")
                         print(moveData.decode() + '\n')
+                
+                elif moveParams[0] == 'steal':
+                    stolen = User('temp','','')
+                    if moveParams[1] != currentGame.dealer.username:
+                        for i in currentGame.players:
+                            if i.username == moveParams[1]:
+                                stolen = i
+                        s.sendto(b'STEALING', (stolen.ip, int(stolen.port)))
+                        s.sendto(sentMove.encode(), addr)
+                        newHand, newHandAddr = s.recvfrom(1024)
+                        print('New Hand:')
+                        print(newHand.decode() + '\n')
+                    else:
+                        s.sendto(sentMove.encode(), addr)
+                        newHand, newHandAddr = s.recvfrom(1024)
+                        print('New Hand:')
+                        print(newHand.decode() + '\n')
+
 
             #Displaying all current cards
             elif data == 'HANDS':
@@ -347,7 +438,7 @@ while True:
                 discard, addr2 = s.recvfrom(1024)
                 discard = discard.decode()
                 print('Draw pile: ***')
-                print('Discard: ' + discard)
+                print('Discard: ' + discard + "\n")
 
             elif data[0] == 'S' and data[1] == 'T' and data[2] == 'A' and data[3] == 'R' and data[4] == 'T':
                 print('')
@@ -363,6 +454,11 @@ while True:
                     score, addrScore = s.recvfrom(1024)
                     print(currentUserName.decode() + ": " + score.decode())
                 print('\n')
+
+            elif data == 'STEALING':
+                newHand, newHandAddr = s.recvfrom(1024)
+                print('New Hand:')
+                print(newHand.decode() + '\n')
 
             else:
                 s.sendto(data.encode(), addr)
@@ -397,7 +493,7 @@ while True:
                     print('Number of active games:', numGames)
                     for i in range(int(numGames)):
                         game = pickle.loads(managerSock.recv(2048))
-                        print('Game', i, ':')
+                        print('Game', game.id, ':')
                         print(game.dealer.username, game.dealer.ip, game.dealer.port)
                         for player in game.players:
                             print(player.username, player.ip, player.port)
@@ -416,6 +512,10 @@ while True:
                     print('Dealer:', '(', dealer.username, dealer.ip, dealer.port, ')')
                     managerSock.send(b'ACK')
                     currentGame.dealer = dealer
+                    gameID = managerSock.recv(1024)
+                    managerSock.send(b'ACK')
+                    currentGame.id = gameID
+                    print('Players:')
                     for i in range(int(params[3])):
                         currentPlayers.append(pickle.loads(managerSock.recv(4096)))
                         managerSock.send(b'ACK')
@@ -445,6 +545,7 @@ while True:
                 print(ack)
                 if ack == 'SUCCESS':
                     managerSock.close()
+                    read_list.remove(managerSock)
 
 
             else:

@@ -121,16 +121,33 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                         if success:
                             s.send(b'SUCCESS')
                             newGame = Game(gameDealer)
+                            newGame.id = len(activeGames)
                             s.send(pickle.dumps(gameDealer))
+                            s.recv(1024)
+                            s.send(str(newGame.id).encode())
                             s.recv(1024)
                             availablePlayers.remove(gameDealer)
                             for i in range(int(params[3])):
                                 s.send(pickle.dumps(availablePlayers.pop()))
+                                if i in availablePlayers:
+                                    availablePlayers.remove(i)
                                 s.recv(1024)
 
                             activeGames.append(newGame)
                         else:
                             s.send(b'FAILURE')
+
+                    elif params[0] == 'end':
+                        deletedGame = Game(User('temp','',''))
+                        for i in activeGames:
+                            if i.id == params[1] and i.dealer.username == params[2]:
+                                deletedGame = i
+                        
+                        if deletedGame.dealer.username == 'temp':
+                            s.send(b'FAILURE')
+                        else:
+                            activeGames.remove(deletedGame)
+                            s.send(b'SUCCESS')
 
 
                     elif params[0] == 'deregister':
@@ -139,6 +156,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                         for i in activePlayers:
                             if i.username == user:
                                 activePlayers.remove(i)
+                                availablePlayers.remove(i)
                                 s.send(b'SUCCESS')
                                 
                                 foundPlayer = True
