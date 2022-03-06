@@ -1,12 +1,9 @@
-from asyncore import read
-import readline
+from re import L
 import socket
 import pickle
 import select
-from sqlite3 import Cursor
 import sys
 import random
-from xml.sax import default_parser_list
 
 class User:
     def __init__(self, username, ip, port):
@@ -54,28 +51,72 @@ def ShuffleDeck(deck):
 def SendCards(currentPlayer):
     peerSock.sendto(b'HANDS', (currentPlayer.ip, int(currentPlayer.port)))
     playerHand = ""
-    for i in range(6):
-        if currentPlayer.hand[i].revealed:
-            playerHand = playerHand + currentPlayer.hand[i].value + ' '
-        else:
-            playerHand = playerHand + "***" + ' '
-        
-        if i == 2:
-            playerHand = playerHand + '\n'
+
+    if currentPlayer.hand[0].revealed:
+        playerHand = playerHand + currentPlayer.hand[0].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[2].revealed:
+        playerHand = playerHand + currentPlayer.hand[2].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+    
+    if currentPlayer.hand[4].revealed:
+        playerHand = playerHand + currentPlayer.hand[4].value + '\n'
+    else:
+        playerHand = playerHand + "*** " + '\n'
+
+    if currentPlayer.hand[1].revealed:
+        playerHand = playerHand + currentPlayer.hand[1].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[3].revealed:
+        playerHand = playerHand + currentPlayer.hand[3].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[5].revealed:
+        playerHand = playerHand + currentPlayer.hand[5].value + ' '
+    else:
+        playerHand = playerHand + "*** "
 
     peerSock.sendto(playerHand.encode(), (currentPlayer.ip, int(currentPlayer.port)))
 
     for player in currentGame.players:
         if player != currentPlayer:
             hand = ""
-            for i in range(6):
-                if player.hand[i].revealed:
-                    hand = hand + player.hand[i].value + ' '
-                else:
-                    hand = hand + "***" + ' '
 
-                if i == 2:
-                    hand = hand + '\n'
+            if player.hand[0].revealed:
+                hand = hand + player.hand[0].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[2].revealed:
+                hand = hand + player.hand[2].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[4].revealed:
+                hand = hand + player.hand[4].value + '\n'
+            else:
+                hand = hand + "*** " + '\n'
+
+            if player.hand[1].revealed:
+                hand = hand + player.hand[1].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[3].revealed:
+                hand = hand + player.hand[3].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[5].revealed:
+                hand = hand + player.hand[5].value + ' '
+            else:
+                hand = hand + "*** "
 
             peerSock.sendto(player.username.encode(), (currentPlayer.ip, int(currentPlayer.port)))
             peerSock.sendto(hand.encode(), (currentPlayer.ip, int(currentPlayer.port)))
@@ -89,14 +130,36 @@ def SendCards(currentPlayer):
 def PrintCards(currentPlayer):
     print('HANDS')
     playerHand = ""
-    for i in range(6):
-        if currentPlayer.hand[i].revealed:
-            playerHand = playerHand + currentPlayer.hand[i].value + ' '
-        else:
-            playerHand = playerHand + "***" + ' '
-        
-        if i == 2:
-            playerHand = playerHand + '\n'
+
+    if currentPlayer.hand[0].revealed:
+        playerHand = playerHand + currentPlayer.hand[0].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[2].revealed:
+        playerHand = playerHand + currentPlayer.hand[2].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+    
+    if currentPlayer.hand[4].revealed:
+        playerHand = playerHand + currentPlayer.hand[4].value + '\n'
+    else:
+        playerHand = playerHand + "*** " + '\n'
+
+    if currentPlayer.hand[1].revealed:
+        playerHand = playerHand + currentPlayer.hand[1].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[3].revealed:
+        playerHand = playerHand + currentPlayer.hand[3].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if currentPlayer.hand[5].revealed:
+        playerHand = playerHand + currentPlayer.hand[5].value + ' '
+    else:
+        playerHand = playerHand + "*** "
 
     print('Your hand:')
     print(playerHand + '\n')
@@ -104,14 +167,36 @@ def PrintCards(currentPlayer):
     for player in currentGame.players:
         if player != currentPlayer:
             hand = ""
-            for i in range(6):
-                if player.hand[i].revealed:
-                    hand = hand + player.hand[i].value + ' '
-                else:
-                    hand = hand + "***" + ' '
 
-                if i == 2:
-                    hand = hand + '\n'
+            if player.hand[0].revealed:
+                hand = hand + player.hand[0].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[2].revealed:
+                hand = hand + player.hand[2].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[4].revealed:
+                hand = hand + player.hand[4].value + '\n'
+            else:
+                hand = hand + "*** " + '\n'
+
+            if player.hand[1].revealed:
+                hand = hand + player.hand[1].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[3].revealed:
+                hand = hand + player.hand[3].value + ' '
+            else:
+                hand = hand + "*** "
+
+            if player.hand[5].revealed:
+                hand = hand + player.hand[5].value + ' '
+            else:
+                hand = hand + "*** "
 
             print(player.username + "'s hand:")
             print(hand + '\n')
@@ -127,46 +212,109 @@ def PrintCards(currentPlayer):
     
 def SendHand(player):
     playerHand = ""
-    for i in range(6):
-        if player.hand[i].revealed:
-            playerHand = playerHand + player.hand[i].value + ' '
-        else:
-            playerHand = playerHand + "***" + ' '
-        
-        if i == 2:
-            playerHand = playerHand + '\n'
+
+    if player.hand[0].revealed:
+        playerHand = playerHand + player.hand[0].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[2].revealed:
+        playerHand = playerHand + player.hand[2].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+    
+    if player.hand[4].revealed:
+        playerHand = playerHand + player.hand[4].value + '\n'
+    else:
+        playerHand = playerHand + "*** " + '\n'
+
+    if player.hand[1].revealed:
+        playerHand = playerHand + player.hand[1].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[3].revealed:
+        playerHand = playerHand + player.hand[3].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[5].revealed:
+        playerHand = playerHand + player.hand[5].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
     peerSock.sendto(playerHand.encode(), (player.ip, int(player.port)))
 
 def PrintHand(player):
     playerHand = ""
-    for i in range(6):
-        if player.hand[i].revealed:
-            playerHand = playerHand + player.hand[i].value + ' '
-        else:
-            playerHand = playerHand + "***" + ' '
-        
-        if i == 2:
-            playerHand = playerHand + '\n'
+    
+    if player.hand[0].revealed:
+        playerHand = playerHand + player.hand[0].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[2].revealed:
+        playerHand = playerHand + player.hand[2].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+    
+    if player.hand[4].revealed:
+        playerHand = playerHand + player.hand[4].value + ' \n'
+    else:
+        playerHand = playerHand + "*** " + '\n'
+
+    if player.hand[1].revealed:
+        playerHand = playerHand + player.hand[1].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[3].revealed:
+        playerHand = playerHand + player.hand[3].value + ' '
+    else:
+        playerHand = playerHand + "*** "
+
+    if player.hand[5].revealed:
+        playerHand = playerHand + player.hand[5].value + ' '
+    else:
+        playerHand = playerHand + "*** "
     
     print(playerHand)
 
+def CheckDuplicates(player, pos):
+    newCard = player.hand[pos]
+    for i in reversed(range(pos)):
+        if player.hand[i].value[0] == newCard.value[0] and player.hand[i].value[1] == newCard.value[1]:
+            if i % 2 == 0:
+                player.hand[pos] = player.hand[i + 1]
+                player.hand[i + 1] = newCard
+            else:
+                player.hand[pos] = player.hand[i - 1]
+                player.hand[i - 1] = newCard
+            break
 
 
 def AddScores():
     for currentPlayer in currentGame.players:
         for i in range(6):
-            if currentPlayer.hand[i].value[1] == '2':
-                currentPlayer.score = currentPlayer.score - 2
-            elif currentPlayer.hand[i].value[1] == 'A':
-                currentPlayer.score = currentPlayer.score + 1
-            elif currentPlayer.hand[i].value[1] == 'J' or currentPlayer.hand[i].value[1] == 'Q':
-                currentPlayer.score = currentPlayer.score + 10
-            elif currentPlayer.hand[i].value[1] == 'K':
-                currentPlayer.score = currentPlayer.score + 0
-            elif currentPlayer.hand[i].value[0] == '1':
-                currentPlayer.score = currentPlayer.score + 10
+            if i % 2 == 0 and currentPlayer.hand[i].value[0] == currentPlayer.hand[i + 1].value[0] and currentPlayer.hand[i].value[1] == currentPlayer.hand[i + 1].value[1]:
+                continue
+            elif i % 2 == 1 and currentPlayer.hand[i].value[0] == currentPlayer.hand[i - 1].value[0] and currentPlayer.hand[i].value[1] == currentPlayer.hand[i - 1].value[1]:
+                continue
             else:
-                currentPlayer.score = currentPlayer.score + int(currentPlayer.hand[i].value[1])
+                if currentPlayer.hand[i].value[1] == '2':
+                    currentPlayer.score = currentPlayer.score - 2
+                elif currentPlayer.hand[i].value[1] == 'A':
+                    currentPlayer.score = currentPlayer.score + 1
+                elif currentPlayer.hand[i].value[1] == 'J' or currentPlayer.hand[i].value[1] == 'Q':
+                    currentPlayer.score = currentPlayer.score + 10
+                elif currentPlayer.hand[i].value[1] == 'K':
+                    currentPlayer.score = currentPlayer.score + 0
+                elif currentPlayer.hand[i].value[0] == '1':
+                    currentPlayer.score = currentPlayer.score + 10
+                else:
+                    currentPlayer.score = currentPlayer.score + int(currentPlayer.hand[i].value[1])
+
+
 
 
 def StartGameLoop():
@@ -217,6 +365,7 @@ def StartGameLoop():
                             currentGame.discard.append(currentPlayer.hand[currentCard])
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
                             SendHand(currentPlayer)
                         elif moveParams[1] == "pile":
                             #Draw from draw pile
@@ -224,6 +373,7 @@ def StartGameLoop():
                             currentGame.discard.append(currentPlayer.hand[currentCard])
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
                             SendHand(currentPlayer)
                     
                     elif moveParams[0] == "steal":
@@ -246,6 +396,8 @@ def StartGameLoop():
                             
                             currentPlayer.hand[currentCard] = stolenCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
+                            CheckDuplicates(stolenUser, currentCard)
                             SendHand(stolenUser)
                             SendHand(currentPlayer)
                             
@@ -259,14 +411,18 @@ def StartGameLoop():
                             print('STEALING')
                             
                             stolenCard = Card('')
+                            stolenCardPos = 0
                             replacedCard = currentPlayer.hand[currentCard]
                             for i in range(len(stolenUser.hand)):
                                 if stolenUser.hand[i].value.lower() == stolenCardInput.lower():
+                                    stolenCardPos = i
                                     stolenCard = stolenUser.hand[i]
                                     stolenUser.hand[i] = replacedCard
                                     stolenUser.hand[i].revealed = True
                             currentPlayer.hand[currentCard] = stolenCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
+                            CheckDuplicates(stolenUser, stolenCardPos)
                             SendHand(currentPlayer)
                             print('New Hand:')
                             PrintHand(stolenUser)
@@ -292,6 +448,8 @@ def StartGameLoop():
                             currentGame.discard.append(currentPlayer.hand[currentCard])
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
+                            print('New hand:')
                             PrintHand(currentPlayer)
                         elif moveParams[1] == "pile":
                             #Draw from draw pile
@@ -299,6 +457,8 @@ def StartGameLoop():
                             currentGame.discard.append(currentPlayer.hand[currentCard])
                             currentPlayer.hand[currentCard] = newCard
                             currentPlayer.hand[currentCard].revealed = True
+                            CheckDuplicates(currentPlayer, currentCard)
+                            print('New hand:')
                             PrintHand(currentPlayer)
 
                     elif moveParams[0] == "steal":
@@ -311,14 +471,18 @@ def StartGameLoop():
                                 stolenUser = i
                         peerSock.sendto(b'STEALING', (stolenUser.ip, int(stolenUser.port)))
                         stolenCard = Card('')
+                        stolenCardPos = 0
                         replacedCard = currentPlayer.hand[currentCard]
                         for i in range(len(stolenUser.hand)):
                             if stolenUser.hand[i].value.lower() == stolenCardInput.lower():
+                                stolenCardPos = i
                                 stolenCard = stolenUser.hand[i]
                                 stolenUser.hand[i] = replacedCard
                                 stolenUser.hand[i].revealed = True
                         currentPlayer.hand[currentCard] = stolenCard
                         currentPlayer.hand[currentCard].revealed = True
+                        CheckDuplicates(currentPlayer, currentCard)
+                        CheckDuplicates(stolenUser, stolenCardPos)
                         SendHand(stolenUser)
                         print('New Hand:')
                         PrintHand(currentPlayer)
